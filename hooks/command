@@ -8,8 +8,13 @@ fi
 
 nodejs_version="${BUILDKITE_PLUGIN_NODEJS_VERSION:-lts}"
 
+HOOKS_DIR="$(cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
+PACKACK_CMD="$HOOKS_DIR/../bin/package"
+
+
 args=(
   "--rm"
+  "--volume" "$PACKACK_CMD:/bin/package"
   "--volume" "$PWD:/src"
   "--workdir" "/src"
   "--env" "BUILDKITE_PLUGIN_NODEJS_ENTRYPOINT"
