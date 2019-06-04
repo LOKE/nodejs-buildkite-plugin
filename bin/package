@@ -1,0 +1,53 @@
+#!/bin/bash
+set -euo pipefail
+
+download_url="https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-x64.tar.xz"
+project_name="$(node --print "require('./package.json').name")"
+
+NODE_DIR="$(mktemp -d)"
+PKG_DIR="$(mktemp -d)"
+
+exec_file="${PKG_DIR}/bin/${project_name}"
+
+echo "--- Download node binary ${download_url}"
+
+curl -s "${download_url}" | tar -xJ -C "${NODE_DIR}"
+
+echo "--- NPM install"
+
+npm ci --production
+
+echo "--- Configure"
+
+# copy source
+cp -R . "${PKG_DIR}"
+
+# copy node
+cp -R "${NODE_DIR}/node-v${NODE_VERSION}-linux-x64" "${PKG_DIR}/node"
+
+# create entrypoint
+if [ ! -f "${exec_file}" ]; then
+    mkdir -p "$( dirname "${exec_file}" )"
+
+    cat > "${exec_file}" <<SCRIPT
+#!/bin/bash
+# set -euo pipefail
+
+BASE_DIR="\$(cd "\$( dirname "\${BASH_SOURCE[0]}" )/.." && pwd)"
+
+exec "\${BASE_DIR}/node/bin/node" "\${BASE_DIR}/${BUILDKITE_PLUGIN_NODEJS_ENTRYPOINT:-"server.js"}"
+SCRIPT
+
+    chmod +x "${exec_file}"
+fi
+
+echo "--- Package"
+
+# create package
+tar -zcf "package.tar.gz" \
+  --exclude ".git" \
+  --exclude "package.tar.gz" \
+  -C "${PKG_DIR}" \
+  .
+
+cat "${exec_file}"

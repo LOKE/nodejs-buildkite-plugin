@@ -1,0 +1,27 @@
+#!/bin/bash
+set -euo pipefail
+
+if [[ "${BUILDKITE_PLUGIN_NODEJS_DEBUG:-false}" =~ (true|on|1) ]] ; then
+  echo "--- :hammer: Enabling debug mode"
+  env | sort | grep BUILDKITE_PLUGIN_NODEJS
+fi
+
+nodejs_version="${BUILDKITE_PLUGIN_NODEJS_VERSION:-lts}"
+
+args=(
+  "--rm"
+  "--volume" "$PWD:/src"
+  "--workdir" "/src"
+  "--env" "BUILDKITE_PLUGIN_NODEJS_ENTRYPOINT"
+)
+
+# Parse extra env vars and add them to the docker args
+while IFS='=' read -r name _ ; do
+  if [[ $name =~ ^(BUILDKITE_PLUGIN_NODEJS_ENVIRONMENT_[0-9]+) ]] ; then
+    args+=( "--env" "${!name}" )
+  fi
+done < <(env | sort)
+
+echo "+++ :nodejs: Running ${BUILDKITE_COMMAND} in node:${nodejs_version}"
+
+docker run "${args[@]}" "node:${nodejs_version}" bash -c "${BUILDKITE_COMMAND}"

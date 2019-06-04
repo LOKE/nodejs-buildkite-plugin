@@ -1,0 +1,14 @@
+name: NodeJS
+description: Run a command in a nodejs container
+author: "https://github.com/LOKE"
+requirements:
+  - docker
+configuration:
+  properties:
+    version:
+      type: string
+    environment:
+      type: array
+    entrypoint:
+      type: string
+  required: []
