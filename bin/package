@@ -49,5 +49,3 @@ tar -zcf "package.tar.gz" \
   --exclude "package.tar.gz" \
   -C "${PKG_DIR}" \
   .
-
-cat "${exec_file}"
