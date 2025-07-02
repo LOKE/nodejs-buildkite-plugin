@@ -3,6 +3,7 @@ set -euo pipefail
 
 download_url="https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-x64.tar.xz"
 project_name="$(node --print "require('./package.json').name")"
+has_build_script="$(node --print "require('./package.json').scripts?.build !== undefined")"
 
 NODE_DIR="$(mktemp -d)"
 PKG_DIR="$(mktemp -d)"
@@ -12,6 +13,18 @@ exec_file="${PKG_DIR}/bin/${project_name}"
 echo "--- Download node binary ${download_url}"
 
 curl -s "${download_url}" | tar -xJ -C "${NODE_DIR}"
+
+if [ "$has_build_script" = "true" ]; then
+    echo "--- Build project"
+
+    # install dependencies
+    npm ci
+
+    # run build script
+    npm run build
+else
+    echo "--- No build script found, skipping build"
+fi
 
 echo "--- NPM install"
 
